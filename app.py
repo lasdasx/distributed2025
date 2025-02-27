@@ -38,9 +38,7 @@ app.register_blueprint(utilsBp)
 
 # Bootstrap Node Logic
 is_bootstrap = '--bootstrap' in sys.argv
-# if is_bootstrap:
-#     # active_nodes.append(node_address)
-#     print("Starting as bootstrap node")
+
 
 # Function to register with bootstrap node
 def register_with_bootstrap():

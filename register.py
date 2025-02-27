@@ -19,10 +19,13 @@ def register():
 
     new_node = request.json['newNode']
     if node_state.next_node == None or node_state.prev_node == None:
+        print("AAAAAEEE")
         requests.post(f"http://{node_state.node_address}/update-next", json={"next_node": new_node})
         requests.post(f"http://{new_node}/update-prev", json={"prev_node": node_state.node_address})
         requests.post(f"http://{new_node}/update-next", json={"next_node": node_state.node_address})
         requests.post(f"http://{node_state.node_address}/update-prev", json={"prev_node": new_node})
+        print(node_state.prev_node, node_state.next_node)
+        print("AAAAAAAAAAAAAAcccc")
         return jsonify({'status': 'registered'}), 201
         
     if node_state.next_node < node_state.node_address and (new_node > node_state.node_address or new_node < node_state.next_node):

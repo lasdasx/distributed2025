@@ -5,32 +5,41 @@ from utils import forward_request,backward_request
 
 overlayBp = Blueprint('overlay', __name__)
 
-# @overlayBp.record_once
-# def setup(setup_state):
-#     global prev_node, next_node, node_address , active_nodes
-#     prev_node = setup_state.options['prev_node']
-#     next_node = setup_state.options['next_node']
-#     active_nodes = setup_state.options['active_nodes']
-#     node_address = setup_state.options['node_address']
 
 @overlayBp.route('/overlay/<key>', methods=['POST'])
 def overlay(key):
-    if node_state.next_node== None or node_state.prev_node == None:
-        print("AAAA")
-        return jsonify({'nodes': [node_state.node_address]}), 200
-    if 'array' not in request.json:
-        array = []
-    else:
-        array = request.json['array']
+    print(f"Got request at node: {node_state.node_address}")
+    array = request.json.get('array', [])
 
-        
-    if node_state.node_address != key:
-        array.append(node_state.node_address)
-        forward_request('overlay', key, array)
-    else:
-        if len(array) == 0:
-            array.append(node_state.node_address)
-            forward_request('overlay', key, array)
-        else:
-            return jsonify({'nodes': array}), 200
+    # Normalize key and node address for consistency
+    normalized_key = key.replace('http://', '').replace('https://', '')
+    normalized_node = node_state.node_address.replace('http://', '').replace('https://', '')
+
+    # If the array is empty, this is the starting node
+    if not array:
+        array.append(normalized_node)
+
+    # Check if current node is already in array, if not, add it
+    if normalized_node not in array:
+        array.append(normalized_node)
+
+    # Filter out None values and remove duplicates while preserving order
+    array = [addr for addr in array if addr]
+    array = list(dict.fromkeys(array))
+    print(f"Array so far: {array}")
+
+    # If back at the origin node and we have visited at least one other node, return the result
+    if normalized_node == normalized_key and len(array) > 1:
+        print("Back at the origin node. Returning collected nodes.")
+        return jsonify({'nodes': array}), 200
+
+    # If there's only one node in the network, return immediately to avoid infinite loop
+    if len(array) == 1 and node_state.next_node == normalized_node:
+        print("Single-node network detected. Returning the only node.")
+        return jsonify({'nodes': array}), 200
+
+    # Otherwise, forward the request to the next node
+    print(f"Forwarding to next node: {node_state.next_node}")
+    forward_request('overlay', key, {'array': array})
+    return jsonify({'status': 'forwarded'}), 202
 

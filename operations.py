@@ -8,7 +8,7 @@ active_nodes = []
 next_node = node_state.next_node
 prev_node = node_state.prev_node
 node_address = node_state.node_address
-
+storage=node_state.storage
 # @operationsBp.record_once
 # def setup(setup_state):
 #     global prev_node, next_node, node_address ,active_nodes,storage

@@ -4,13 +4,6 @@ from state import node_state  # Import the centralized state
 
 utilsBp = Blueprint('utils', __name__)
 
-# @utilsBp.record_once
-# def setup(setup_state):
-#     global prev_node, next_node, node_address , active_nodes
-#     prev_node = setup_state.options['prev_node']
-#     next_node = setup_state.options['next_node']
-#     active_nodes = setup_state.options['active_nodes']
-#     node_address = setup_state.options['node_address']
 
 node_address = node_state.node_address
 
@@ -37,9 +30,11 @@ def forward_request(action, key, value=None):
             response = requests.delete(url)
         elif action == "join":
             response = requests.post(url)
-        elif action=="overlay":
-            value.append(node_address)
-            response = requests.post(url, json={'array': value})
+        elif action == "overlay":
+            array = value.get('array', [])
+            array.append(node_state.node_address)
+            value['array'] = array
+            response = requests.post(url, json=value)
         else:  # query
             response = requests.get(url)
         return response.json()
