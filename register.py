@@ -33,6 +33,8 @@ def register():
         requests.post(f"http://{new_node}/update-prev", json={"prev_node": node_state.node_address})
         requests.post(f"http://{new_node}/update-next", json={"next_node": node_state.next_node})
         requests.post(f"http://{node_state.next_node}/update-prev", json={"prev_node": new_node})
+        return jsonify({'status': 'registered'}), 201
+
         
     else:     
         if new_node > node_state.node_address and new_node < node_state.next_node:
@@ -40,17 +42,22 @@ def register():
             requests.post(f"http://{new_node}/update-prev", json={"prev_node": node_state.node_address})
             requests.post(f"http://{new_node}/update-next", json={"next_node": node_state.next_node})
             requests.post(f"http://{node_state.next_node}/update-prev", json={"prev_node": new_node})
+            return jsonify({'status': 'registered'}), 201
+
         
         elif new_node > node_state.node_address and new_node > node_state.next_node:
             forward_request('register', new_node)
+            return jsonify({'status': 'forwarder'}), 201
+
             
         elif new_node < node_state.node_address and new_node < node_state.prev_node:
             backward_request('register', new_node)
-        
+            return jsonify({'status': 'backwarded'}), 201
+
         elif new_node < node_state.node_address and new_node > node_state.prev_node:
             requests.post(f"http://{node_state.node_address}/update-prev", json={"prev_node": new_node})
             requests.post(f"http://{new_node}/update-prev", json={"prev_node": node_state.prev_node})
             requests.post(f"http://{new_node}/update-next", json={"next_node": node_state.node_address})
             requests.post(f"http://{node_state.prev_node}/update-next", json={"next_node": new_node})
-    print(node_state.prev_node, node_state.next_node)
-    print("AAAAAAAAAAAAAA")
+            return jsonify({'status': 'registered'}), 201
+    

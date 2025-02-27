@@ -60,6 +60,8 @@ def register_with_bootstrap():
 
 if __name__ == '__main__':
     # Run Flask app
+    node_state.node_address = node_address
+
     threading.Thread(target=lambda: app.run(host='0.0.0.0', port=int(node_port)), daemon=True).start()
 
     # Wait a moment for the server to start
