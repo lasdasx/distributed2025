@@ -4,6 +4,8 @@ import requests
 from flask import Flask, request, jsonify
 from storage import Storage
 import os
+import time
+import threading
 
 app = Flask(__name__)
 storage = Storage()
@@ -51,9 +53,13 @@ def depart():
     notify_pointer_update(prev=prev_node,nxt=next_node)
     
     propagate_node_removal(prev_node,next_node, node_address)
-    print("before")
-    os._exit(0)
-    print("after")
+    def delayed_exit():
+        time.sleep(1)  # Wait a bit to ensure response is sent
+        os._exit(0)
+
+    # Start the exit in a new thread, allowing the response to be returned first
+    threading.Thread(target=delayed_exit).start()
+    
     return jsonify({'status': 'left'}), 200
 
 def propagate_node_removal(end_node, target_node, leaving_node):
