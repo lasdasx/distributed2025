@@ -28,8 +28,9 @@ def forward_request(action, key, value=None):
             response = requests.post(url, json={'value': value})
         elif action == "delete":
             response = requests.delete(url)
-        elif action == "join":
-            response = requests.post(url)
+        elif action == "register":
+            url = f"http://{node_state.next_node}/{action}"
+            response = requests.post(url, json={'newNode': key})
         elif action == "overlay":
             array = value.get('array', [])
             array.append(node_state.node_address)
@@ -39,7 +40,7 @@ def forward_request(action, key, value=None):
             response = requests.get(url)
         return response.json()
     except requests.exceptions.ConnectionError:
-        return jsonify({'error': 'Failed to contact next node'}), 500
+        return {'error': 'Failed to contact next node'}
 
 
 def backward_request(action, key, value=None):
@@ -50,8 +51,9 @@ def backward_request(action, key, value=None):
             response = requests.post(url, json={'value': value})
         elif action == "delete":
             response = requests.delete(url)
-        elif action == "join":
-            response = requests.post(url)
+        elif action == "register":
+            url = f"http://{node_state.next_node}/{action}"
+            response = requests.post(url, json={'newNode': key})    
         elif action=="overlay":
             response = requests.post(url, json={'array': value})
         else:  # query
@@ -77,3 +79,7 @@ def update_prev():
     node_state.prev_node = request.json['prev_node']
     print(f"Previous pointer updated to: {node_state.prev_node}")
     return jsonify({'status': 'prev updated'}), 200
+
+@utilsBp.route('/get-next', methods=['GET'])
+def get_next():
+    return jsonify({'next_node': node_state.next_node if node_state.next_node else node_state.node_address}), 200

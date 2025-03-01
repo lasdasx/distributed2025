@@ -48,7 +48,7 @@ def register_with_bootstrap():
         while True:
             try:
                 print(f"Trying to join the network via {bootstrap_url}")
-                response = requests.post(bootstrap_url, json={'newNode': node_address})
+                response = requests.post(bootstrap_url, json={'newNode': node_state.node_address})
                 if response.status_code == 201:
                     print("Successfully registered with the bootstrap node.")
                     break
@@ -70,7 +70,9 @@ if __name__ == '__main__':
     # Start registration in a new thread
     if not is_bootstrap:
         threading.Thread(target=register_with_bootstrap, daemon=True).start()
-
+    else:
+        node_state.next_node = node_address
+        node_state.prev_node = node_address
     # Keep main thread alive
     while True:
         time.sleep(1)
