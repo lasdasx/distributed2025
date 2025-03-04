@@ -20,6 +20,9 @@ def chord_hash(data):
     sha1.update(data.encode())  # Encode the string and hash it
     return int(sha1.hexdigest(), 16) 
 
+def containsKey(key):
+    return key in node_state.storage
+
 def is_responsible(key):
     """ Check if this node is responsible for the key """
     key_hash = chord_hash(key)
@@ -39,9 +42,9 @@ def forward_request(action, key, value=None):
     """ Forward request to the next node in the ring """
     url = f"http://{node_state.next_node}/{action}/{key}"
     try:
-        if action == "insert":
+        if action == "insert" or action=='insertLinear':
             response = requests.post(url, json={'value': value})
-        elif action == "delete":
+        elif action == "delete" or action=='deleteLinear':
             response = requests.delete(url)
         elif action == "register":
             url = f"http://{node_state.next_node}/{action}"
@@ -100,10 +103,10 @@ def get_next():
     return jsonify({'next_node': node_state.next_node if node_state.next_node else node_state.node_address}), 200
 
 @utilsBp.route('/getMode', methods=['GET'])
-def get_mode():
+def getMode():
     return jsonify({'mode': node_state.consistencyMode}), 200
 
 
-@utilsBp.route('/gerReplicationFactor', methods=['GET'])
-def get_mode():
-    return jsonify({'mode': node_state.replicationFactor}), 200
+@utilsBp.route('/getReplicationFactor', methods=['GET'])
+def getReplicationFactor():
+    return jsonify({'replicationFactor': node_state.replicationFactor}), 200
