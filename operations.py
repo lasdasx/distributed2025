@@ -3,49 +3,57 @@ import requests
 from utils import is_responsible,forward_request
 from state import node_state 
 operationsBp = Blueprint('operations', __name__)
+from utils import chord_hash
 
 active_nodes = []
 next_node = node_state.next_node
 prev_node = node_state.prev_node
 node_address = node_state.node_address
 storage=node_state.storage
-# @operationsBp.record_once
-# def setup(setup_state):
-#     global prev_node, next_node, node_address ,active_nodes,storage
-#     prev_node = setup_state.options['prev_node']
-#     next_node = setup_state.options['next_node']
-#     node_address = setup_state.options['node_address']
-#     active_nodes = setup_state.options['active_nodes']
-#     storage =setup_state.options['storage']
 
-@operationsBp.route('/nodes', methods=['GET'])
-def get_nodes():
-    return jsonify({'nodes': active_nodes})
+
 
 @operationsBp.route('/insert/<key>', methods=['POST'])
 def insert(key):
+
     value = request.json['value']
     # Ring routing: Check if this node is responsible
     if is_responsible(key):
-        storage.insert(key, value)  
-        return jsonify({'status': 'success', 'node': 'self'}), 201
+        node_state.storage.insert(key, value)  
+        return jsonify({'status': 'success', 'node': node_state.node_address}), 201
     else:
         # Forward to the next node
         return forward_request('insert', key, value)
 
 @operationsBp.route('/query/<key>', methods=['GET'])
 def query(key):
+    if key=="*":
+        results = {}
+        results[node_state.node_address] = storage.data
+        next_node=node_state.next_node
+        while next_node!= node_state.node_address:
+            response = requests.get(f"http://{next_node}/getData")
+            data = response.json()['data']
+            results[next_node] = data
+            next_node = response.json()['next_node']
+            
+        return jsonify(results), 200
+
     if is_responsible(key):
         value = storage.query(key)
-        return jsonify({'value': value, 'node': 'self'}), 200
+        return jsonify({'value': value, 'node': node_state.node_address}), 200
     else:
         return forward_request('query', key)
+    
+@operationsBp.route('/getData', methods=['GET'])
+def getData():
+    return jsonify({"data":storage.data, "next_node":node_state.next_node}), 200
 
 @operationsBp.route('/delete/<key>', methods=['DELETE'])
 def delete(key):
     if is_responsible(key):
         storage.delete(key)
-        return jsonify({'status': 'deleted', 'node': 'self'}), 200
+        return jsonify({'status': 'deleted', 'node': node_state.node_address}), 200
     else:
         return forward_request('delete', key)
     

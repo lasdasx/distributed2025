@@ -7,12 +7,27 @@ utilsBp = Blueprint('utils', __name__)
 
 node_address = node_state.node_address
 
+import hashlib
+
+def chord_hash(data):
+    """
+    Computes the SHA-1 hash of the given input string and returns it as an integer.
+
+    :param data: Input string to be hashed.
+    :return: Integer representation of the SHA-1 hash.
+    """
+    sha1 = hashlib.sha1()  # Create SHA-1 hash object
+    sha1.update(data.encode())  # Encode the string and hash it
+    return int(sha1.hexdigest(), 16) 
+
 def is_responsible(key):
     """ Check if this node is responsible for the key """
-    key_hash = hash(key)
-    node_hash = hash(node_address)
-    prev_hash = hash(node_state.prev_node)
+    key_hash = chord_hash(key)
+    node_hash = chord_hash(node_state.node_address)
+    prev_hash = chord_hash(node_state.prev_node)
 
+    print(f"key_hash: {key_hash}, node_hash: {node_hash}, prev_hash: {prev_hash}")
+    print('node_address: ', node_state.node_address)
     # Responsible if the key is in the (prev_node, current_node] range
     if prev_hash < node_hash:
         return prev_hash < key_hash <= node_hash

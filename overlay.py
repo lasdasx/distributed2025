@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 import requests
 from state import node_state
-from utils import forward_request,backward_request
+
+from utils import forward_request,backward_request, chord_hash
 
 overlayBp = Blueprint('overlay', __name__)
 
@@ -16,7 +17,9 @@ def overlay():
         response=requests.get(f"http://{currrentNode}/get-next")
         nextNode=response.json()['next_node']
         currrentNode=nextNode
+        print(currrentNode,chord_hash(currrentNode))
     print(node_state.next_node,node_state.prev_node)
+
     return jsonify({'nodes': visitedNodes}), 200
 # @overlayBp.route('/overlay/<key>', methods=['POST'])
 # def overlay(key):

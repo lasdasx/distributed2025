@@ -11,6 +11,7 @@ from overlay import overlayBp
 import time
 from state import node_state
 import threading
+from utils import chord_hash
 app=Flask(__name__)
 storage = Storage()
 
@@ -22,9 +23,10 @@ def get_local_ip():
 # Dynamic node address
 node_ip = get_local_ip()
 print(node_ip)
-node_port = sys.argv[1] if node_ip=="127.0.0.1"  else "5000"  # Allow port as a cmd argument
+node_port = sys.argv[2] if "--port" in sys.argv else "5000"  # Allow port as a cmd argument
 node_address = f"{node_ip}:{node_port}"
 node_state.node_address = node_address
+node_state.node_address_hash = chord_hash(node_state.node_address)
 
 active_nodes = []
 next_node = None
@@ -44,7 +46,7 @@ is_bootstrap = '--bootstrap' in sys.argv
 # Function to register with bootstrap node
 def register_with_bootstrap():
     if not is_bootstrap:
-        bootstrapIp = "10.0.42.248" #first vm bootstrap
+        bootstrapIp = "10.0.42.248" if not "--port" in sys.argv else "127.0.0.1" #first vm bootstrap
         # Non-bootstrap nodes register with the bootstrap node
         bootstrap_url = f"http://{bootstrapIp}:5000/register"
         while True:
@@ -63,7 +65,7 @@ def register_with_bootstrap():
 if __name__ == '__main__':
     # Run Flask app
     node_state.node_address = node_address
-
+    node_state.node_address_hash = chord_hash(node_state.node_address)
     threading.Thread(target=lambda: app.run(host='0.0.0.0', port=int(node_port)), daemon=True).start()
 
     # Wait a moment for the server to start
