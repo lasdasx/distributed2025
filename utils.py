@@ -98,3 +98,12 @@ def update_prev():
 @utilsBp.route('/get-next', methods=['GET'])
 def get_next():
     return jsonify({'next_node': node_state.next_node if node_state.next_node else node_state.node_address}), 200
+
+@utilsBp.route('/getMode', methods=['GET'])
+def get_mode():
+    return jsonify({'mode': node_state.consistencyMode}), 200
+
+
+@utilsBp.route('/gerReplicationFactor', methods=['GET'])
+def get_mode():
+    return jsonify({'mode': node_state.replicationFactor}), 200

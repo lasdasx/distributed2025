@@ -11,8 +11,10 @@ from overlay import overlayBp
 import time
 from state import node_state
 import threading
+import os
 from utils import chord_hash
 app=Flask(__name__)
+
 storage = Storage()
 
 # Get the local IP address dynamically
@@ -48,16 +50,21 @@ def register_with_bootstrap():
     if not is_bootstrap:
         bootstrapIp = "10.0.42.248" if not "--port" in sys.argv else "127.0.0.1" #first vm bootstrap
         # Non-bootstrap nodes register with the bootstrap node
-        bootstrap_url = f"http://{bootstrapIp}:5000/register"
+        bootstrap_url = f"http://{bootstrapIp}:5000"
         while True:
             try:
                 print(f"Trying to join the network via {bootstrap_url}")
-                response = requests.post(bootstrap_url, json={'newNode': node_state.node_address})
+                node_state.consistencyMode=requests.get(f"{bootstrap_url}/getMode").json()['mode']
+                node_state.replicationFactor=requests.get(f"{bootstrap_url}/getReplicationFactor").json()['replicationFactor']
+
+
+                response = requests.post(f"{bootstrap_url}/register", json={'newNode': node_state.node_address})
                 if response.status_code == 201:
                     print("Successfully registered with the bootstrap node.")
                     break
                 else:
                     print(f"Failed to register. Status code: {response.status_code}")
+            
             except requests.exceptions.ConnectionError:
                 print("Failed to contact the bootstrap node. Retrying in 5 seconds...")
             time.sleep(5)
@@ -77,6 +84,8 @@ if __name__ == '__main__':
     else:
         node_state.next_node = node_address
         node_state.prev_node = node_address
+        node_state.replicationFactor = 1 if not "-rf" in sys.argv else int(sys.argv[sys.argv.index("-rf") + 1])
+        node_state.consistencyMode = "eventual" if "-e" in sys.argv else "linear"
     # Keep main thread alive
     while True:
         time.sleep(1)

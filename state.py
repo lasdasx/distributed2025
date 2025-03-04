@@ -8,5 +8,7 @@ class NodeState:
     prev_node_hash = None
     next_node_hash = None
     storage=Storage()
+    consistencyMode=None
+    replicationFactor=None
 
 node_state = NodeState()

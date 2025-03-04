@@ -11,6 +11,10 @@ prev_node = node_state.prev_node
 node_address = node_state.node_address
 storage=node_state.storage
 
+mode=node_state.consistencyMode
+replicationFactor=node_state.replicationFactor
+
+
 
 
 @operationsBp.route('/insert/<key>', methods=['POST'])
