@@ -8,6 +8,7 @@ from depart import departBp
 import requests
 from register import registerBp
 from overlay import overlayBp
+from eventual import eventualBp
 import time
 from state import node_state
 import threading
@@ -40,6 +41,7 @@ app.register_blueprint(overlayBp,)
 app.register_blueprint(departBp)
 app.register_blueprint(operationsBp)
 app.register_blueprint(utilsBp)
+app.register_blueprint(eventualBp)
 
 # Bootstrap Node Logic
 is_bootstrap = '--bootstrap' in sys.argv

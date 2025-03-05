@@ -46,7 +46,7 @@ def register():
     # Case 4: Ring Wraparound (Handles cases where the next node is smaller due to circular nature)
     elif next_node_hash < node_adress_hash:
         print("fourth if")
-        if new_node_hash > node_adress_hash or new_node_hash < new_node_hash:
+        if new_node_hash > node_adress_hash or new_node_hash < next_node_hash:
             print("fourth if inner")
             requests.post(f"http://{new_node}/update-prev", json={"prev_node": node_state.node_address})
             requests.post(f"http://{new_node}/update-next", json={"next_node": node_state.next_node})

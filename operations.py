@@ -4,6 +4,8 @@ from utils import is_responsible,forward_request
 from state import node_state 
 operationsBp = Blueprint('operations', __name__)
 from utils import chord_hash
+import threading
+from eventual import replicate_to_peers, propagate_delete
 
 active_nodes = []
 next_node = node_state.next_node
@@ -14,16 +16,17 @@ storage=node_state.storage
 mode=node_state.consistencyMode
 replicationFactor=node_state.replicationFactor
 
-
-
-
 @operationsBp.route('/insert/<key>', methods=['POST'])
 def insert(key):
 
     value = request.json['value']
     # Ring routing: Check if this node is responsible
     if is_responsible(key):
-        node_state.storage.insert(key, value)  
+        node_state.storage.insert(key, value) 
+        
+        if node_state.consistencyMode == "eventual":
+            threading.Thread(target=replicate_to_peers, args=(key, value)).start()
+ 
         return jsonify({'status': 'success', 'node': node_state.node_address}), 201
     else:
         # Forward to the next node
@@ -57,6 +60,10 @@ def getData():
 def delete(key):
     if is_responsible(key):
         storage.delete(key)
+        
+        if node_state.consistencyMode == "eventual":
+            threading.Thread(target=propagate_delete, args=(key,)).start()
+            
         return jsonify({'status': 'deleted', 'node': node_state.node_address}), 200
     else:
         return forward_request('delete', key)
