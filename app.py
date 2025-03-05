@@ -58,7 +58,7 @@ def register_with_bootstrap():
                 node_state.replicationFactor=requests.get(f"{bootstrap_url}/getReplicationFactor").json()['replicationFactor']
 
 
-                response = requests.post(f"{bootstrap_url}/register", json={'newNode': node_state.node_address})
+                response = requests.post(f"{bootstrap_url}/registerLinear", json={'newNode': node_state.node_address})
                 if response.status_code == 201:
                     print("Successfully registered with the bootstrap node.")
                     break

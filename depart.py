@@ -8,13 +8,6 @@ from state import node_state
 departBp = Blueprint('depart', __name__)
 
 
-# @departBp.record_once
-# def setup(setup_state):
-#     global prev_node, next_node, node_address ,active_nodes
-#     prev_node = setup_state.options['prev_node']
-#     next_node = setup_state.options['next_node']
-#     node_address = setup_state.options['node_address']
-#     active_nodes = setup_state.options['active_nodes']
 
 @departBp.route('/depart', methods=['DELETE'])
 def depart():
@@ -26,10 +19,26 @@ def depart():
 
         return jsonify({'status': 'departed', 'message': 'Node was the only one in the ring'}), 200
 
+
+
+    # Case 2: This is not the only node in the ring
+    print("AAAAAA")
+    keys = [key for key in node_state.storage.copyIndexes]
+    print(keys)
+    values = node_state.storage.data
+    keyCopies = node_state.storage.copyIndexes
+    visited=[node_state.node_address]
+    print("BBBBBB")
+    response = requests.post(f"http://{node_state.next_node}/updateNext", json={ 'keys':keys, 'values':values, 'keyCopies':keyCopies, 'visited':visited})
+
+
+
+    print("CCCCCCCC")
     # Inform the previous and next nodes to update their pointers
     requests.post(f"http://{node_state.prev_node}/update-next", json={"next_node": node_state.next_node})
     requests.post(f"http://{node_state.next_node}/update-prev", json={"prev_node": node_state.prev_node})
 
+    print("DDDDDDDD")
     # Clear the node's state to indicate departure
     departing_node = node_state.node_address
     
@@ -38,4 +47,40 @@ def depart():
     threading.Timer(2, lambda: os._exit(0)).start()
 
     return jsonify({'status': 'departed', 'node': departing_node}), 200
+
+@departBp.route('/updateNext', methods=['POST'])
+def updateNext():
+    print("updateNext")
+    visited=request.json['visited']
+    if node_state.node_address not in visited:
+        print("updateNext inside if")
+        keys= request.json['keys']
+        values= request.json['values']
+        keyCopies = request.json['keyCopies']
+        print("before for")
+        for key in keys[:]:
+            print(key)
+            print(node_state.replicationFactor)
+            if keyCopies[key]<node_state.replicationFactor:
+                node_state.storage.copyIndexes[key]=keyCopies[key]
+                keyCopies[key]+=1
+            elif keyCopies[key]==node_state.replicationFactor:
+                node_state.storage.insert(key, values[key])
+                node_state.storage.copyIndexes[key]=node_state.replicationFactor
+                del keyCopies[key] #avoid loop contition for next node
+                keys.remove(key)
+                del values[key]
+        print("after for")
+        visited.append(node_state.node_address)
+        print(visited)
+        print(keys)
+        if keys==[]:
+            return jsonify({'status': 'success', 'message': f"reached node {node_state.node_address} with all keys updated"}), 201
+        print("before next node")
+        response= requests.post(f"http://{node_state.next_node}/updateNext", json={ 'keys':keys, 'values':values, 'keyCopies':keyCopies, 'visited':visited})
+        print("after next node")
+        return response.json()
+    else:
+        response= jsonify({'status': 'success', 'message': f"reached node {node_state.node_address}"}), 201
+        return response.json()
 
