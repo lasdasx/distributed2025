@@ -29,8 +29,6 @@ def is_responsible(key):
     node_hash = chord_hash(node_state.node_address)
     prev_hash = chord_hash(node_state.prev_node)
 
-    print(f"key_hash: {key_hash}, node_hash: {node_hash}, prev_hash: {prev_hash}")
-    print('node_address: ', node_state.node_address)
     # Responsible if the key is in the (prev_node, current_node] range
     if prev_hash < node_hash:
         return prev_hash < key_hash <= node_hash
@@ -101,6 +99,11 @@ def update_prev():
 @utilsBp.route('/get-next', methods=['GET'])
 def get_next():
     return jsonify({'next_node': node_state.next_node if node_state.next_node else node_state.node_address}), 200
+
+@utilsBp.route('/get-prev', methods=['GET'])
+def get_prev():
+    return jsonify({'prev_node': node_state.prev_node if node_state.prev_node else node_state.node_address}), 200
+
 
 @utilsBp.route('/getMode', methods=['GET'])
 def getMode():
