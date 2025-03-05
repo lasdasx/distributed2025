@@ -20,14 +20,19 @@ replicationFactor=node_state.replicationFactor
 @operationsBp.route('/insert/<key>', methods=['POST'])
 def insert(key):
 
-    value = request.json['value']
-    # Ring routing: Check if this node is responsible
-    if is_responsible(key):
-        node_state.storage.insert(key, value)  
-        return jsonify({'status': 'success', 'node': node_state.node_address}), 201
+    # value = request.json['value']
+    # # Ring routing: Check if this node is responsible
+    # if is_responsible(key):
+    #     node_state.storage.insert(key, value)  
+    #     return jsonify({'status': 'success', 'node': node_state.node_address}), 201
+    # else:
+    #     # Forward to the next node
+    #     return forward_request('insert', key, value)
+    if node_state.consistencyMode == "eventual":
+        ## return insertEventual(key)
+        print("eventual ++++")
     else:
-        # Forward to the next node
-        return forward_request('insert', key, value)
+        return insertLinear(key)
     
 @operationsBp.route('/insertLinear/<key>', methods=['POST'])
 def insertLinear(key):
@@ -93,7 +98,7 @@ def removeReplica():
 def queryLinear(key):
     if key=="*":
         results = {}
-        results[node_state.node_address] = (storage.data, storage.copyIndexes)
+        results[node_state.node_address] = storage.data #( , copyIndexes)
         next_node=node_state.next_node
         while next_node!= node_state.node_address:
             response = requests.get(f"http://{next_node}/getData")
@@ -121,34 +126,43 @@ def queryLast():
 
 @operationsBp.route('/query/<key>', methods=['GET'])
 def query(key):
-    if key=="*":
-        results = {}
-        results[node_state.node_address] = storage.data
-        next_node=node_state.next_node
-        while next_node!= node_state.node_address:
-            response = requests.get(f"http://{next_node}/getData")
-            data = response.json()['data']
-            results[next_node] = data
-            next_node = response.json()['next_node']
+    # if key=="*":
+    #     results = {}
+    #     results[node_state.node_address] = storage.data
+    #     next_node=node_state.next_node
+    #     while next_node!= node_state.node_address:
+    #         response = requests.get(f"http://{next_node}/getData")
+    #         data = response.json()['data']
+    #         results[next_node] = data
+    #         next_node = response.json()['next_node']
             
-        return jsonify(results), 200
+    #     return jsonify(results), 200
 
-    if is_responsible(key) or key in storage.data:
-        value = storage.query(key)
-        return jsonify({'value': value, 'node': node_state.node_address}), 200
+    # if is_responsible(key) or key in storage.data:
+    #     value = storage.query(key)
+    #     return jsonify({'value': value, 'node': node_state.node_address}), 200
+    # else:
+    #     return forward_request('query', key)
+    if node_state.consistencyMode == "eventual":
+        ## return insertEventual(key)
+        print("eventual ++++")
     else:
-        return forward_request('query', key)
+        return queryLinear(key)
 
     
 @operationsBp.route('/getData', methods=['GET'])
 def getData():
-    return jsonify({"data":(storage.data,storage.copyIndexes), "next_node":node_state.next_node}), 200
+    return jsonify({"data":storage.data, "next_node":node_state.next_node}), 200 #(, queryIndexes)
 
 @operationsBp.route('/delete/<key>', methods=['DELETE'])
 def delete(key):
-    if is_responsible(key):
-        storage.delete(key)
-        return jsonify({'status': 'deleted', 'node': node_state.node_address}), 200
+    # if is_responsible(key):
+    #     storage.delete(key)
+    #     return jsonify({'status': 'deleted', 'node': node_state.node_address}), 200
+    # else:
+    #     return forward_request('delete', key)
+    if node_state.consistencyMode == "eventual":
+        ## return insertEventual(key)
+        print("eventual ++++")
     else:
-        return forward_request('delete', key)
-    
+        return deleteLinear(key)
