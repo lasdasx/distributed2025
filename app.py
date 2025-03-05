@@ -26,7 +26,7 @@ def get_local_ip():
 # Dynamic node address
 node_ip = get_local_ip()
 print(node_ip)
-node_port = sys.argv[2] if "--port" in sys.argv else "5000"  # Allow port as a cmd argument
+node_port = sys.argv[sys.argv.index("--port") + 1] if "--port" in sys.argv else "5000"  # Allow port as a cmd argument
 node_address = f"{node_ip}:{node_port}"
 node_state.node_address = node_address
 node_state.node_address_hash = chord_hash(node_state.node_address)
@@ -60,7 +60,7 @@ def register_with_bootstrap():
                 node_state.replicationFactor=requests.get(f"{bootstrap_url}/getReplicationFactor").json()['replicationFactor']
 
 
-                response = requests.post(f"{bootstrap_url}/register", json={'newNode': node_state.node_address})
+                response = requests.post(f"{bootstrap_url}/registerLinear" if node_state.consistencyMode == "linear" else f"{bootstrap_url}/registerEventual", json={'newNode': node_state.node_address})
                 if response.status_code == 201:
                     print("Successfully registered with the bootstrap node.")
                     break
