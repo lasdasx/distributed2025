@@ -19,7 +19,7 @@ replicationFactor=node_state.replicationFactor
 @operationsBp.route('/insert/<key>', methods=['POST'])
 def insert(key):
 
-    # value = request.json['value']
+    value = request.json['value']
     # # Ring routing: Check if this node is responsible
     # if is_responsible(key):
     #     node_state.storage.insert(key, value)  
@@ -29,7 +29,7 @@ def insert(key):
     #     return forward_request('insert', key, value)
     if node_state.consistencyMode == "eventual":
         ## return insertEventual(key)
-        print("eventual ++++")
+        threading.Thread(target=replicate_to_successor, args=(key, value)).start()
     else:
         return insertLinear(key)
     
@@ -125,26 +125,26 @@ def queryLast():
 
 @operationsBp.route('/query/<key>', methods=['GET'])
 def query(key):
-    # if key=="*":
-    #     results = {}
-    #     results[node_state.node_address] = storage.data
-    #     next_node=node_state.next_node
-    #     while next_node!= node_state.node_address:
-    #         response = requests.get(f"http://{next_node}/getData")
-    #         data = response.json()['data']
-    #         results[next_node] = data
-    #         next_node = response.json()['next_node']
-            
-    #     return jsonify(results), 200
-
-    # if is_responsible(key) or key in storage.data:
-    #     value = storage.query(key)
-    #     return jsonify({'value': value, 'node': node_state.node_address}), 200
-    # else:
-    #     return forward_request('query', key)
+   
     if node_state.consistencyMode == "eventual":
-        ## return insertEventual(key)
-        print("eventual ++++")
+        if key=="*":
+            results = {}
+            results[node_state.node_address] = storage.data
+            next_node=node_state.next_node
+            while next_node!= node_state.node_address:
+                response = requests.get(f"http://{next_node}/getData")
+                data = response.json()['data']
+                results[next_node] = data
+                next_node = response.json()['next_node']
+            
+            return jsonify(results), 200
+
+        if is_responsible(key) or key in storage.data:
+            value = storage.query(key)
+            return jsonify({'value': value, 'node': node_state.node_address}), 200
+        else:
+            return forward_request('query', key)
+        
     else:
         return queryLinear(key)
 
@@ -162,6 +162,6 @@ def delete(key):
     #     return forward_request('delete', key)
     if node_state.consistencyMode == "eventual":
         ## return insertEventual(key)
-        print("eventual ++++")
+        threading.Thread(target=propagate_delete_to_successor, args=(key,)).start()
     else:
         return deleteLinear(key)
