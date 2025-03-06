@@ -15,40 +15,40 @@ def cli():
 @cli.command()
 @click.argument('key')
 @click.argument('value')
-@click.argument('targetNode')
-def insert(key, value, targetNode):
+@click.argument('targetnode')
+def insert(key, value, targetnode):
     """Insert a key-value pair"""
-    response = requests.post(f"http://{targetNode}/insert/{key}", json={"value": value})
+    response = requests.post(f"http://{targetnode}/insert/{key}", json={"value": value})
     click.echo(response.json())
 
 # Query Command
 @cli.command()
 @click.argument('key')
-@click.argument('targetNode')
-def query(key,targetNode):
+@click.argument('targetnode')
+def query(key,targetnode):
     """Query a value by key"""
-    response = requests.get(f"http://{targetNode}/query/{key}")
+    response = requests.get(f"http://{targetnode}/query/{key}")
     click.echo(response.json())
 
 # Delete Command
 @cli.command()
 @click.argument('key')
-@click.argument('targetNode')
-def delete(key,targetNode):
+@click.argument('targetnode')
+def delete(key,targetnode):
     """Delete a key-value pair"""
-    response = requests.delete(f"http://{targetNode}/delete/{key}")
-    click.echo(response.json())
-
-@click.command
-@click.argument('targetNode')
-def overlay(targetNode):
-    response = requests.get(f"http://{targetNode}/overlay")
+    response = requests.delete(f"http://{targetnode}/delete/{key}")
     click.echo(response.json())
 
 @cli.command()
-@click.argument('targetNode')
-def depart(targetNode):
-    response = requests.delete(f"http://{targetNode}/depart")
+@click.argument('targetnode')
+def overlay(targetnode):
+    response = requests.get(f"http://{targetnode}/overlay")
+    click.echo(response.json())
+
+@cli.command()
+@click.argument('targetnode')
+def depart(targetnode):
+    response = requests.delete(f"http://{targetnode}/depart")
     click.echo(response.json())
 
 
@@ -100,6 +100,21 @@ def join(port, bootstrap, rf, e):
     process.wait()
 
 
+@cli.command()
+@click.argument('command', required=False)
+def help(command):
+    """Show help for commands"""
+    if command:
+        try:
+            ctx = cli.get_command(cli, command)
+            if ctx:
+                click.echo(ctx.get_help(click.Context(ctx)))
+            else:
+                click.echo(f"Unknown command: {command}")
+        except Exception as e:
+            click.echo(f"Error fetching help: {e}")
+    else:
+        click.echo(cli.get_help(click.Context(cli)))
 
 if __name__ == '__main__':
     cli()

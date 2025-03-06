@@ -53,7 +53,7 @@ is_bootstrap = '--bootstrap' in sys.argv
 # Function to register with bootstrap node
 def register_with_bootstrap():
     if not is_bootstrap:
-        bootstrapIp = "10.0.42.248" if not "--port" in sys.argv else "127.0.0.1" #first vm bootstrap
+        bootstrapIp = "10.0.42.248" if not "--local" in sys.argv else "127.0.0.1" #first vm bootstrap
         # Non-bootstrap nodes register with the bootstrap node
         bootstrap_url = f"http://{bootstrapIp}:5000"
         while True:
