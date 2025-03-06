@@ -68,7 +68,7 @@ def join(port, bootstrap, rf, e):
     Starts the Flask server (from app.py) and shows the output it produces in the terminal.
     """
     # Build the command to run app.py with the provided arguments
-    command = ['python', 'app.py', '--port', str(port)]
+    command = ['python3', 'app.py', '--port', str(port)]
     
     if bootstrap:
         command.append('--bootstrap')
