@@ -5,6 +5,7 @@ import sys
 import threading
 import subprocess
 import time
+import os
 
 @click.group()
 def cli():
@@ -17,7 +18,10 @@ def cli():
 @click.argument('value')
 @click.argument('targetnode')
 def insert(key, value, targetnode):
-    """Insert a key-value pair"""
+    """Insert a key-value pair\n
+       - key: Title of the song.\n
+       - value: A string indicating the node that stores the song.\n
+       - target node: Node that we insert the pair"""
     response = requests.post(f"http://{targetnode}/insert/{key}", json={"value": value})
     click.echo(response.json())
 
@@ -26,7 +30,9 @@ def insert(key, value, targetnode):
 @click.argument('key')
 @click.argument('targetnode')
 def query(key,targetnode):
-    """Query a value by key"""
+    """Searches for a key and returns its value.\n
+       -key: Title of the song\n
+       If '*' is given as a key, it returns all (key, value) pairs in the DHT."""
     response = requests.get(f"http://{targetnode}/query/{key}")
     click.echo(response.json())
 
@@ -74,31 +80,35 @@ def join(port, bootstrap, rf, e):
         command.append('-e')
 
     print(f"Starting the server on port {port}...")
+    
+    if os.name == 'nt':  # Windows
+        subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    else:  # Linux & macOS
+        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Run app.py with the given arguments and show the output
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    #process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     # Continuously capture and print the output in real-time
-    while True:
-        # Read stdout line by line
-        output = process.stdout.readline()
-        if output:
-            print(output.strip())  # Print the output in the terminal
-            sys.stdout.flush()  # Flush the output immediately
+    # while True:
+    #     # Read stdout line by line
+    #     output = process.stdout.readline()
+    #     if output:
+    #         print(output.strip())  # Print the output in the terminal
+    #         sys.stdout.flush()  # Flush the output immediately
 
-        # Break when the process completes
-        if process.poll() is not None:
-            break
+    #     # Break when the process completes
+    #     if process.poll() is not None:
+    #         break
 
-    # Ensure we read all remaining stderr if the process ends
-    stderr_output = process.stderr.read()
-    if stderr_output:
-        print(f"Final Error: {stderr_output.strip()}")
-        sys.stdout.flush()  # Flush remaining error output
+    # # Ensure we read all remaining stderr if the process ends
+    # stderr_output = process.stderr.read()
+    # if stderr_output:
+    #     print(f"Final Error: {stderr_output.strip()}")
+    #     sys.stdout.flush()  # Flush remaining error output
 
-    # Wait for the process to complete
-    process.wait()
-
+    # # Wait for the process to complete
+    # process.wait()
 
 @cli.command()
 @click.argument('command', required=False)
@@ -116,5 +126,30 @@ def help(command):
     else:
         click.echo(cli.get_help(click.Context(cli)))
 
+
+def interactive_cli():
+    """Starts an interactive CLI session"""
+    while True:
+        try:
+            # Prompt user for input
+            command = input("dht-cli> ").strip()
+            
+            # If the user types "exit" or "quit", break the loop
+            if command.lower() in ["exit", "quit"]:
+                print("Exiting CLI...")
+                break
+            
+            # Split command into arguments
+            args = command.split()
+
+            # If there's a command, invoke Click with it
+            if args:
+                cli.main(args=args, standalone_mode=False)
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+# Run interactive CLI if script is executed
 if __name__ == '__main__':
-    cli()
+    interactive_cli()
+
