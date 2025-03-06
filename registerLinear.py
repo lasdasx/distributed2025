@@ -5,10 +5,10 @@ from state import node_state  # Import the centralized state
 from utils import chord_hash,is_responsible
 
 
-registerBp = Blueprint('register', __name__)
+registerLinearBp = Blueprint('registerLinear', __name__)
 
 
-@registerBp.route('/register', methods=['POST'])
+@registerLinearBp.route('/register', methods=['POST'])
 def register():
     new_node = request.json['newNode']
     new_node_hash = chord_hash(new_node)
@@ -137,7 +137,7 @@ def register():
     
 
 
-@registerBp.route('/registerLinear', methods=["POST"])
+@registerLinearBp.route('/registerLinear', methods=["POST"])
 def registerLinear():
     new_node = request.json['newNode']
     response = requests.post(f"http://{node_state.node_address}/register", json={'newNode': new_node})
@@ -166,7 +166,7 @@ def registerLinear():
 
 
 
-@registerBp.route('/updateCopyIndexes',methods=["POST"])
+@registerLinearBp.route('/updateCopyIndexes',methods=["POST"])
 def updateCopyIndexes():
     try:
         copyIndexes=request.json["copyIndexes"]
@@ -193,7 +193,7 @@ def updateCopyIndexes():
         print(e)
         return jsonify({'status': "failed"}), 500
 
-@registerBp.route('/addKeys', methods=["POST"])
+@registerLinearBp.route('/addKeys', methods=["POST"])
 def addKeys():
     try:
         values=request.json["values"]
@@ -206,7 +206,7 @@ def addKeys():
         print(e)
         return jsonify({'status': "failed"}), 500
 
-@registerBp.route('/getRedistributeKeys', methods=["GET"])
+@registerLinearBp.route('/getRedistributeKeys', methods=["GET"])
 def getRedistributeKeys():
     keys={}    
     values={}
@@ -216,7 +216,7 @@ def getRedistributeKeys():
             values[key]=node_state.storage.data[key]          
     return jsonify({'redistributeKeys': keys, 'values':values}), 200
 
-@registerBp.route('/getReplicateKeys', methods=["GET"])
+@registerLinearBp.route('/getReplicateKeys', methods=["GET"])
 def getReplicateKeys():
     keyCopies={}
     values={}

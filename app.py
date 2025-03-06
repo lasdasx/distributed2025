@@ -6,7 +6,8 @@ from utils import utilsBp
 from operations import operationsBp
 from depart import departBp
 import requests
-from register import registerBp
+from registerEventual import registerEventualBp
+from registerLinear import registerLinearBp
 from overlay import overlayBp
 from eventual import eventualBp
 import time
@@ -36,7 +37,9 @@ next_node = None
 prev_node = None
 
 
-app.register_blueprint(registerBp)
+app.register_blueprint(registerLinearBp)
+app.register_blueprint(registerEventualBp)
+
 app.register_blueprint(overlayBp,)
 app.register_blueprint(departBp)
 app.register_blueprint(operationsBp)

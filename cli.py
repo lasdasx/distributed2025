@@ -5,11 +5,6 @@ import sys
 import threading
 import subprocess
 import time
-# def get_local_ip():
-#     hostname = socket.gethostname()
-#     return socket.gethostbyname(hostname)
-
-# LOCAL_NODE = f"{get_local_ip()}:5000"  # Always start with the local node
 
 @click.group()
 def cli():
