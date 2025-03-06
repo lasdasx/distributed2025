@@ -5,11 +5,11 @@ import sys
 import threading
 import subprocess
 import time
-def get_local_ip():
-    hostname = socket.gethostname()
-    return socket.gethostbyname(hostname)
+# def get_local_ip():
+#     hostname = socket.gethostname()
+#     return socket.gethostbyname(hostname)
 
-LOCAL_NODE = f"{get_local_ip()}:5000"  # Always start with the local node
+# LOCAL_NODE = f"{get_local_ip()}:5000"  # Always start with the local node
 
 @click.group()
 def cli():
@@ -20,35 +20,40 @@ def cli():
 @cli.command()
 @click.argument('key')
 @click.argument('value')
-def insert(key, value):
+@click.argument('targetNode')
+def insert(key, value, targetNode):
     """Insert a key-value pair"""
-    response = requests.post(f"http://{LOCAL_NODE}/insert/{key}", json={"value": value})
+    response = requests.post(f"http://{targetNode}/insert/{key}", json={"value": value})
     click.echo(response.json())
 
 # Query Command
 @cli.command()
 @click.argument('key')
-def query(key):
+@click.argument('targetNode')
+def query(key,targetNode):
     """Query a value by key"""
-    response = requests.get(f"http://{LOCAL_NODE}/query/{key}")
+    response = requests.get(f"http://{targetNode}/query/{key}")
     click.echo(response.json())
 
 # Delete Command
 @cli.command()
 @click.argument('key')
-def delete(key):
+@click.argument('targetNode')
+def delete(key,targetNode):
     """Delete a key-value pair"""
-    response = requests.delete(f"http://{LOCAL_NODE}/delete/{key}")
+    response = requests.delete(f"http://{targetNode}/delete/{key}")
     click.echo(response.json())
 
 @click.command
-def overlay():
-    response = requests.get(f"http://{LOCAL_NODE}/overlay")
+@click.argument('targetNode')
+def overlay(targetNode):
+    response = requests.get(f"http://{targetNode}/overlay")
     click.echo(response.json())
 
 @cli.command()
-def depart():
-    response = requests.delete(f"http://{LOCAL_NODE}/depart")
+@click.argument('targetNode')
+def depart(targetNode):
+    response = requests.delete(f"http://{targetNode}/depart")
     click.echo(response.json())
 
 

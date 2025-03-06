@@ -19,17 +19,19 @@ replicationFactor=node_state.replicationFactor
 @operationsBp.route('/insert/<key>', methods=['POST'])
 def insert(key):
 
-    value = request.json['value']
-    # # Ring routing: Check if this node is responsible
-    # if is_responsible(key):
-    #     node_state.storage.insert(key, value)  
-    #     return jsonify({'status': 'success', 'node': node_state.node_address}), 201
-    # else:
-    #     # Forward to the next node
-    #     return forward_request('insert', key, value)
     if node_state.consistencyMode == "eventual":
         ## return insertEventual(key)
-        threading.Thread(target=replicate_to_successor, args=(key, value)).start()
+        value = request.json['value']
+        # Ring routing: Check if this node is responsible
+        if is_responsible(key):
+            node_state.storage.insert(key, value)
+            node_state.storage.copyIndexes[key] = 1  
+            threading.Thread(target=replicate_to_successor, args=(key, value)).start()
+
+            return jsonify({'status': 'success', 'node': node_state.node_address}), 201
+        else:
+            # Forward to the next node
+            return forward_request('insert', key, value)
     else:
         return insertLinear(key)
     
@@ -139,7 +141,7 @@ def query(key):
             
             return jsonify(results), 200
 
-        if is_responsible(key) or key in storage.data:
+        elif is_responsible(key) or key in storage.data:
             value = storage.query(key)
             return jsonify({'value': value, 'node': node_state.node_address}), 200
         else:
@@ -162,6 +164,11 @@ def delete(key):
     #     return forward_request('delete', key)
     if node_state.consistencyMode == "eventual":
         ## return insertEventual(key)
-        threading.Thread(target=propagate_delete_to_successor, args=(key,)).start()
+        if is_responsible(key):
+            storage.delete(key)
+            threading.Thread(target=propagate_delete_to_successor, args=(key,)).start()
+            return jsonify({'status': 'deleted', 'node': node_state.node_address}), 200
+        else:
+            return forward_request('delete', key)
     else:
         return deleteLinear(key)

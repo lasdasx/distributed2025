@@ -45,7 +45,7 @@ def get_successor_node():
 
 def replicate_to_successor(key, value, hop=1):
     """ Forward replication to the next node in the Chord ring """
-    if hop >= node_state.replicationFactor:
+    if hop >= node_state.replicationFactor or node_state.storage.copyIndexes[key]==1:
         return  # Stop forwarding after reaching replication factor limit
 
     successor = get_successor_node()
@@ -67,6 +67,7 @@ def replicate(key):
 
     # Store the replicated value locally
     node_state.storage.insert(key, value)
+    node_state.storage.copyIndexes[key]=hop
 
     # Continue forwarding replication to the next successor
     threading.Thread(target=replicate_to_successor, args=(key, value, hop)).start()
