@@ -12,18 +12,32 @@ def cli():
     """CLI for DHT Operations"""
     pass
 
-# Insert Command
+# Insert Command@click.command()
 @cli.command()
 @click.argument('key')
 @click.argument('value')
 @click.argument('targetnode')
 def insert(key, value, targetnode):
-    """Insert a key-value pair\n
-       - key: Title of the song.\n
-       - value: A string indicating the node that stores the song.\n
-       - target node: Node that we insert the pair"""
-    response = requests.post(f"http://{targetnode}/insert/{key}", json={"value": value})
-    click.echo(response.json())
+    """Insert a key-value pair"""
+    
+    url = f"http://{targetnode}/insert/{key}"
+    payload = {"value": value}
+    
+    try:
+        response = requests.post(url, json=payload)
+        
+        # Debugging: Print raw response
+        click.echo(f"Response status: {response.status_code}")
+        click.echo(f"Response text: {response.text}")  # Print raw response
+
+        # Try parsing JSON only if response is not empty
+        if response.headers.get("Content-Type") == "application/json":
+            click.echo(response.json())
+        else:
+            click.echo("Error: Server did not return JSON")
+    
+    except requests.exceptions.RequestException as e:
+        click.echo(f"Request failed: {e}")
 
 # Query Command
 @cli.command()
@@ -63,7 +77,9 @@ def depart(targetnode):
 @click.option('--bootstrap', is_flag=True, help='Start as a bootstrap node')
 @click.option('-rf', type=int, help='Replication factor')
 @click.option('-e', is_flag=True, help='Set consistency mode to eventual')
-def join(port, bootstrap, rf, e):
+@click.option('--local', is_flag=True, help='Test in local environment')
+
+def join(port, bootstrap, rf, e, local):
     """
     Starts the Flask server (from app.py) and shows the output it produces in the terminal.
     """
@@ -78,37 +94,39 @@ def join(port, bootstrap, rf, e):
     
     if e:
         command.append('-e')
+    if local:
+        command.append('--local')
 
     print(f"Starting the server on port {port}...")
     
-    if os.name == 'nt':  # Windows
-        subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
-    else:  # Linux & macOS
-        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # if os.name == 'nt':  # Windows
+    #     subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    # else:  # Linux & macOS
+    #     subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Run app.py with the given arguments and show the output
-    #process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     # Continuously capture and print the output in real-time
-    # while True:
-    #     # Read stdout line by line
-    #     output = process.stdout.readline()
-    #     if output:
-    #         print(output.strip())  # Print the output in the terminal
-    #         sys.stdout.flush()  # Flush the output immediately
+    while True:
+        # Read stdout line by line
+        output = process.stdout.readline()
+        if output:
+            print(output.strip())  # Print the output in the terminal
+            sys.stdout.flush()  # Flush the output immediately
 
-    #     # Break when the process completes
-    #     if process.poll() is not None:
-    #         break
+        # Break when the process completes
+        if process.poll() is not None:
+            break
 
-    # # Ensure we read all remaining stderr if the process ends
-    # stderr_output = process.stderr.read()
-    # if stderr_output:
-    #     print(f"Final Error: {stderr_output.strip()}")
-    #     sys.stdout.flush()  # Flush remaining error output
+    # Ensure we read all remaining stderr if the process ends
+    stderr_output = process.stderr.read()
+    if stderr_output:
+        print(f"Final Error: {stderr_output.strip()}")
+        sys.stdout.flush()  # Flush remaining error output
 
     # # Wait for the process to complete
-    # process.wait()
+    process.wait()
 
 @cli.command()
 @click.argument('command', required=False)

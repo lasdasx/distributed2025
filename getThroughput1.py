@@ -18,17 +18,17 @@ command_files = [
 
 # Corresponding nodes (one per process)
 nodes = [
-    "10.0.42.248:5000", "10.0.42.23:5000", "10.0.42.173:5000",
-    "10.0.42.188:5000", "10.0.42.57:5000", "10.0.42.248:5001",
-    "10.0.42.23:5001", "10.0.42.173:5001", "10.0.42.188:5001",
-    "10.0.42.57:5001"
+    "127.0.0.1:5000", "127.0.0.1:5001", "127.0.0.1:5002",
+    "127.0.0.1:5005", "127.0.0.1:5004", "127.0.0.1:5003",
+    "127.0.0.1:5006", "127.0.0.1:5007", "127.0.0.1:5008",
+    "127.0.0.1:5009"
 ]
 
 def execute_commands_from_file(filename, node):
     """Reads a file and executes each command, measuring execution time and throughput."""
     try:
         with open("expirements/inserts/" + filename, 'r') as file:
-            commands = [line.strip() for line in file if line.strip()]  # Read all non-empty commands
+            commands = [line for line in file if line.strip()]  # Read all non-empty commands
 
         total_commands = len(commands)
         if total_commands == 0:
@@ -38,9 +38,9 @@ def execute_commands_from_file(filename, node):
         start_time = time.time()  # Start timing
 
         for command in commands:
-            full_command = f"sudo python3 cli.py insert \"{command}\" value {node}"
+            full_command = f" python3 cli.py insert \"{command}\" value {node}"
             process = subprocess.run(full_command, shell=True, capture_output=True, text=True)
-
+            print(full_command)
             if process.stdout:
                 print(f"[{filename} -> {node}] Output:\n{process.stdout}")
             if process.stderr:

@@ -16,7 +16,6 @@ import threading
 import os
 from utils import chord_hash
 app=Flask(__name__)
-
 storage = Storage()
 
 # Get the local IP address dynamically

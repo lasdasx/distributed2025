@@ -68,7 +68,7 @@ def backward_request(action, key, value=None):
         elif action == "delete":
             response = requests.delete(url)
         elif action == "register":
-            url = f"http://{node_state.next_node}/{action}"
+            url = f"http://{node_state.prev_node}/{action}"
             response = requests.post(url, json={'newNode': key})    
         elif action=="overlay":
             response = requests.post(url, json={'array': value})
