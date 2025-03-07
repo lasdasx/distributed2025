@@ -38,7 +38,7 @@ def execute_commands_from_file(filename, node):
         start_time = time.time()  # Start timing
 
         for command in commands:
-            full_command = f"python3 cli.py insert \"{command}\" value {node}"
+            full_command = f"sudo python3 cli.py insert \"{command}\" value {node}"
             process = subprocess.run(full_command, shell=True, capture_output=True, text=True)
 
             if process.stdout:
