@@ -151,5 +151,6 @@ def interactive_cli():
 
 # Run interactive CLI if script is executed
 if __name__ == '__main__':
-    interactive_cli()
+        # interactive_cli() ###test
+        cli()
 
