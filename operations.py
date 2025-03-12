@@ -25,12 +25,14 @@ def insert(key):
         # Ring routing: Check if this node is responsible
         if is_responsible(key):
             node_state.storage.insert(key, value)
-            node_state.storage.copyIndexes[key] = 1  
-            threading.Thread(target=replicate_to_successor, args=(key, value)).start()
+            node_state.storage.copyIndexes[key] = 1
+            print(f"[Insert] Key {key} inserted at {node_state.node_address}. Starting replication.")  
+            threading.Thread(target=replicate_to_successor, args=(key, value, 1)).start()
 
             return jsonify({'status': 'success', 'node': node_state.node_address}), 201
         else:
             # Forward to the next node
+            print(f"[Forward] Key {key} not stored here. Forwarding request.")
             return forward_request('insert', key, value)
     else:
         return insertLinear(key)

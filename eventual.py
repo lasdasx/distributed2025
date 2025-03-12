@@ -6,6 +6,7 @@ eventualBp = Blueprint('eventual', __name__)
 
 def get_successor_node():
     """ Get the next node in the Chord ring """
+    print(f"[DEBUG] get_successor_node called. Successor: {node_state.next_node}")
     return node_state.next_node  # Assuming this is updated by stabilization
 
 # def get_replica_nodes():
@@ -44,17 +45,21 @@ def get_successor_node():
 #     return jsonify({'status': 'replicated', 'node': node_state.node_address}), 200
 
 def replicate_to_successor(key, value, hop=1):
+    print(f"[DEBUG] replicate_to_successor called for key: {key}, hop: {hop}")
+
     """ Forward replication to the next node in the Chord ring """
-    if hop >= node_state.replicationFactor or node_state.storage.copyIndexes[key]==1:
+    if hop >= node_state.replicationFactor:
         return  # Stop forwarding after reaching replication factor limit
 
     successor = get_successor_node()
     if not successor:
+        print("[Error] No successor found!")
         return  # If no successor is found, replication stops
 
     try:
         requests.post(f"http://{successor}/replicate/{key}", 
                       json={'value': value, 'hop': hop + 1}, timeout=1)
+        print(f"[Success] Replication forwarded to {successor}: ")
     except Exception as e:
         print(f"Replication to successor {successor} failed: {e}")
 
@@ -68,6 +73,7 @@ def replicate(key):
     # Store the replicated value locally
     node_state.storage.insert(key, value)
     node_state.storage.copyIndexes[key]=hop
+    print(f"[Replicate] Key {key} replicated at {node_state.node_address}, hop {hop}")
 
     # Continue forwarding replication to the next successor
     threading.Thread(target=replicate_to_successor, args=(key, value, hop)).start()
