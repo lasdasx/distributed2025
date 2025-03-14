@@ -81,51 +81,67 @@ def insertLinear(key):
 
     if is_responsible(key):
         currentCopy = 1
-        
-        #**Atomic Storage Update**
+
+        # Ensure thread-safe storage update using the insert method
         with lock:
-            node_state.storage[key] = value
+            node_state.storage.insert(key, value)  # Correct usage of insert method
             node_state.storage.copyIndexes[key] = currentCopy
 
-        #**Replicate Synchronously**
         next_node = node_state.next_node
+        print(f"Forwarding key '{key}' to next node: {next_node}")
+
+        if not next_node:
+            return jsonify({'status': 'error', 'message': 'Next node is None!'}), 500
+
         replication_success = replicate_to_next_node(key, value, currentCopy + 1, next_node)
 
         if replication_success:
-            return jsonify({'status': 'success', 'message': f"Key {key} inserted successfully"}), 201
+            return jsonify({'status': 'success', 'message': f"insertion of key {key} reached node {node_state.node_address}"}), 201
         else:
             return jsonify({'status': 'error', 'message': "Replication failed"}), 500
     else:
         return forward_request('insertLinear', key, value)
 
-
 @operationsBp.route('/addReplica', methods=['POST'])
 def addReplica():
-    key = request.json['key']
-    value = request.json['value']
-    currentCopy = request.json['currentCopy']
+    try:
+        key = request.json['key']
+        value = request.json['value']
+        currentCopy = request.json['currentCopy']
 
-    with lock:
-        if key not in node_state.storage:
-            node_state.storage[key] = value
-            node_state.storage.copyIndexes[key] = currentCopy
+        # Ensure the storage insert is done correctly
+        with lock:
+            if key not in node_state.storage.data:
+                node_state.storage.insert(key, value)
+                node_state.storage.copyIndexes[key] = currentCopy
 
-    #**Stop if Replication Factor is Reached**
-    if currentCopy >= node_state.replicationFactor:
-        return jsonify({'status': 'success', 'message': f"Key {key} fully replicated"}), 201
-    else:
-        next_node = node_state.next_node
-        return replicate_to_next_node(key, value, currentCopy + 1, next_node)
+        if currentCopy >= node_state.replicationFactor:
+            print(f"Replication complete: {key} at {node_state.node_address}")
+            return jsonify({'status': 'success', 'message': f"Key {key} fully replicated"}), 201
+        else:
+            next_node = node_state.next_node
+            if not next_node:
+                print(f"ERROR: No next node for {key}!")
+                return jsonify({'status': 'error', 'message': 'No next node available!'}), 500
+
+            print(f"Forwarding replication for {key} to {next_node}")
+            return replicate_to_next_node(key, value, currentCopy + 1, next_node)
+
+    except Exception as e:
+        print(f"Error in addReplica: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 def replicate_to_next_node(key, value, currentCopy, next_node):
     """Helper function to handle replication requests synchronously."""
     try:
+        print(f"Replicating {key} to {next_node} (Copy {currentCopy})")
         response = requests.post(f"http://{next_node}/addReplica",
                                  json={'key': key, 'value': value, 'currentCopy': currentCopy})
+        print(f"Replication response from {next_node}: {response.status_code}, {response.text}")
         return response.status_code == 201
     except requests.exceptions.RequestException as e:
-        print(f"Replication failed for {key} at node {next_node}: {e}")
+        print(f"Replication failed for {key} at {next_node}: {e}")
         return False
   
 @operationsBp.route('/deleteLinear/<key>', methods=['DELETE'])
