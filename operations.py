@@ -105,27 +105,40 @@ def insertLinear(key):
 @operationsBp.route('/addReplica', methods=['POST'])
 def addReplica():
     try:
-        key = request.json['key']
-        value = request.json['value']
-        currentCopy = request.json['currentCopy']
+        # Check if the request is in JSON format
+        if not request.is_json:
+            return jsonify({'status': 'error', 'message': 'Request payload must be JSON'}), 400
 
-        # Ensure the storage insert is done correctly
-        with lock:
-            if key not in node_state.storage.data:
-                node_state.storage.insert(key, value)
-                node_state.storage.copyIndexes[key] = currentCopy
+        # Extract the required fields from the request
+        key = request.json.get('key')
+        value = request.json.get('value')
+        currentCopy = request.json.get('currentCopy')
 
+        # Validate that all required fields are present
+        if key is None or value is None or currentCopy is None:
+            return jsonify({'status': 'error', 'message': 'Missing required fields (key, value, or currentCopy)'}), 400
+
+        print(f"Received replica for key: {key}, value: {value}, currentCopy: {currentCopy}")
+
+        # Insert the data and update the copyIndexes in the Storage object
+        if key not in node_state.storage.data:
+            node_state.storage.insert(key, value)
+            node_state.storage.copyIndexes[key] = currentCopy
+            print(f"Inserted key: {key} with value: {value} and currentCopy: {currentCopy}")
+
+        # Check if the replication is complete (currentCopy >= replicationFactor)
         if currentCopy >= node_state.replicationFactor:
-            print(f"Replication complete: {key} at {node_state.node_address}")
+            print(f"Replication complete for key {key} at node {node_state.node_address}")
             return jsonify({'status': 'success', 'message': f"Key {key} fully replicated"}), 201
-        else:
-            next_node = node_state.next_node
-            if not next_node:
-                print(f"ERROR: No next node for {key}!")
-                return jsonify({'status': 'error', 'message': 'No next node available!'}), 500
+        
+        # If replication is not complete, forward the request to the next node
+        next_node = node_state.next_node
+        if not next_node:
+            print(f"ERROR: No next node available for replication of key {key}!")
+            return jsonify({'status': 'error', 'message': 'No next node available for replication'}), 500
 
-            print(f"Forwarding replication for {key} to {next_node}")
-            return replicate_to_next_node(key, value, currentCopy + 1, next_node)
+        print(f"Forwarding replication of key {key} to next node {next_node}")
+        return replicate_to_next_node(key, value, currentCopy + 1, next_node)
 
     except Exception as e:
         print(f"Error in addReplica: {e}")
@@ -133,16 +146,21 @@ def addReplica():
 
 
 def replicate_to_next_node(key, value, currentCopy, next_node):
-    """Helper function to handle replication requests synchronously."""
     try:
-        print(f"Replicating {key} to {next_node} (Copy {currentCopy})")
-        response = requests.post(f"http://{next_node}/addReplica",
-                                 json={'key': key, 'value': value, 'currentCopy': currentCopy})
-        print(f"Replication response from {next_node}: {response.status_code}, {response.text}")
-        return response.status_code == 201
+        # Make a POST request to the next node to replicate the data
+        response = requests.post(f"http://{next_node}/addReplica", json={'key': key, 'value': value, 'currentCopy': currentCopy})
+
+        # Return the response from the next node
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return jsonify({'status': 'error', 'message': f"Failed to replicate to {next_node}"}), 500
+
     except requests.exceptions.RequestException as e:
-        print(f"Replication failed for {key} at {next_node}: {e}")
-        return False
+        # Handle any errors that occur during the request to the next node
+        print(f"Error replicating to {next_node}: {e}")
+        return jsonify({'status': 'error', 'message': f"Error replicating to {next_node}: {str(e)}"}), 500
+
   
 @operationsBp.route('/deleteLinear/<key>', methods=['DELETE'])
 def deleteLinear(key):
