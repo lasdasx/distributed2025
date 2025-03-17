@@ -2,26 +2,17 @@
 # Run each command in a new terminal tab with a 3-second delay
 
 #gnome-terminal --tab -- bash -c "python3 app.py --bootstrap --port 5000 -rf 1; exec bash"
-ssh team_35-vm1 "cd distributed2025 ; python3 cli.py join --bootstrap --port 5000 -rf 1" 
-sleep 3
-ssh team_35-vm1 "cd distributed2025 ; python3 cli.py join --port 5001"
-sleep 3
-ssh team_35-vm2 "cd distributed2025 ; python3 cli.py join --port 5000"
-sleep 3
-ssh team_35-vm2 "cd distributed2025 ; python3 cli.py join --port 5001"
-sleep 3
-ssh team_35-vm3 "cd distributed2025 ; python3 cli.py join --port 5000"
-sleep 3
-ssh team_35-vm3 "cd distributed2025 ; python3 cli.py join --port 5001"
-sleep 3
-ssh team_35-vm4 "cd distributed2025 ; python3 cli.py join --port 5000"
-sleep 3
-ssh team_35-vm4 "cd distributed2025 ; python3 cli.py join --port 5001"
-sleep 3
-ssh team_35-vm5 "cd distributed2025 ; python3 cli.py join --port 5000"
-sleep 3
-ssh team_35-vm5 "cd distributed2025 ; python3 cli.py join --port 5001"
-sleep 3
+
+wt.exe new-tab --title "VM1-5000" -- wsl -e bash -c "ssh team_35-vm1 'cd distributed2025 && python3 app.py --bootstrap --port 5000 -rf 3'" ; sleep 6
+wt.exe new-tab --title "VM1-5001" -- wsl -e bash -c "ssh team_35-vm1 'cd distributed2025 && python3 app.py --port 5001'" ; sleep 6
+wt.exe new-tab --title "VM2-5000" -- wsl -e bash -c "ssh team_35-vm2 'cd distributed2025 && python3 app.py --port 5000'" ; sleep 6
+wt.exe new-tab --title "VM2-5001" -- wsl -e bash -c "ssh team_35-vm2 'cd distributed2025 && python3 app.py --port 5001'" ; sleep 6
+wt.exe new-tab --title "VM3-5000" -- wsl -e bash -c "ssh team_35-vm3 'cd distributed2025 && python3 app.py --port 5000'" ; sleep 6
+wt.exe new-tab --title "VM3-5001" -- wsl -e bash -c "ssh team_35-vm3 'cd distributed2025 && python3 app.py --port 5001'" ; sleep 6
+wt.exe new-tab --title "VM4-5000" -- wsl -e bash -c "ssh team_35-vm4 'cd distributed2025 && python3 app.py --port 5000'" ; sleep 6
+wt.exe new-tab --title "VM4-5001" -- wsl -e bash -c "ssh team_35-vm4 'cd distributed2025 && python3 app.py --port 5001'" ; sleep 6
+wt.exe new-tab --title "VM5-5000" -- wsl -e bash -c "ssh team_35-vm5 'cd distributed2025 && python3 app.py --port 5000'" ; sleep 6
+wt.exe new-tab --title "VM5-5001" -- wsl -e bash -c "ssh team_35-vm5 'cd distributed2025 && python3 app.py --port 5001'" ; sleep 6
 
 # gnome-terminal --tab -- bash -c "python3 app.py --port 5001; exec bash"
 # sleep 3
@@ -51,6 +42,3 @@ sleep 3
 # sleep 3
 
 echo "All commands finished!"
-
-### local
-
