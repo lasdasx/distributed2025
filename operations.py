@@ -58,13 +58,17 @@ def addReplica():
     currentCopy=request.json['currentCopy']
 
     print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
-    # if key not in list(node_state.storage.copyIndexes):
-    #     node_state.storage.insert(key, value)
-    #     node_state.storage.copyIndexes[key] = currentCopy
-    #     print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
-    node_state.storage.insert(key, value)
-    node_state.storage.copyIndexes[key] = currentCopy
-    print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
+    if key not in list(node_state.storage.copyIndexes):
+        node_state.storage.insert(key, value)
+        node_state.storage.copyIndexes[key] = currentCopy
+        print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
+    elif node_state.storage.copyIndexes[key]==currentCopy:
+        node_state.storage.insert(key, value)
+        node_state.storage.copyIndexes[key] = currentCopy
+        print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
+    # node_state.storage.insert(key, value)
+    # node_state.storage.copyIndexes[key] = currentCopy
+    # print(f"key: {key}, value: {value}, currentCopy: {currentCopy}")
     
     currentCopy+=1
     print(node_state.replicationFactor)
